@@ -1,4 +1,4 @@
-""" 
+"""
 Copyright (c) 2025 Bytedance Ltd. and/or its affiliates
 SPDX-License-Identifier: MIT
 """
@@ -17,8 +17,8 @@ import torch
 from PIL import Image
 from transformers import PreTrainedTokenizerFast
 
-from utils.model import DonutConfig, DonutModel, SwinEncoder
-from utils.processor import DolphinProcessor
+from dolphin.model import DonutConfig, DonutModel, SwinEncoder
+from dolphin.processor import DolphinProcessor
 
 
 def try_rename_lagacy_weights(ckpt, output_path=""):
@@ -67,7 +67,9 @@ class DOLPHIN:
             align_long_axis=self.swin_args["align_long_axis"],
         )
 
-        self.tokenizer = PreTrainedTokenizerFast(tokenizer_file=self.model_args.tokenizer_path)
+        self.tokenizer = PreTrainedTokenizerFast(
+            tokenizer_file=self.model_args.tokenizer_path
+        )
         self.tokenizer.pad_token = "<pad>"
         self.tokenizer.bos_token = "<s>"
         self.tokenizer.eos_token = "</s>"
@@ -76,9 +78,13 @@ class DOLPHIN:
         if self.model_args.get("extra_answer_tokens", False):
             # print("Allowing multitask training: adding <Answer/> to the tokenizer.")
             prompt_end_token = " <Answer/>"
-            self.tokenizer.add_special_tokens({"additional_special_tokens": sorted(set([prompt_end_token]))})
+            self.tokenizer.add_special_tokens(
+                {"additional_special_tokens": sorted(set([prompt_end_token]))}
+            )
             self.tokenizer._prompt_end_token = prompt_end_token
-            self.tokenizer._prompt_end_token_id = self.tokenizer.convert_tokens_to_ids(prompt_end_token)
+            self.tokenizer._prompt_end_token_id = self.tokenizer.convert_tokens_to_ids(
+                prompt_end_token
+            )
 
         donut_config = DonutConfig(
             decoder_layer=self.model_args.decoder_layer,
@@ -87,7 +93,9 @@ class DOLPHIN:
             hidden_dimension=self.model_args.hidden_dimension,
         )
 
-        self.model = DonutModel(config=donut_config, vision_tower=vision_tower, tokenizer=self.tokenizer)
+        self.model = DonutModel(
+            config=donut_config, vision_tower=vision_tower, tokenizer=self.tokenizer
+        )
         if self.model_args.model_name_or_path:
             ckpt = torch.load(self.model_args.model_name_or_path)
             ckpt = try_rename_lagacy_weights(ckpt)
@@ -100,7 +108,9 @@ class DOLPHIN:
             "input_size": self.swin_args["img_size"],
             "max_length": self.model_args.max_length,
         }
-        self.processor = DolphinProcessor({}, self.tokenizer, transform_args=transform_args)
+        self.processor = DolphinProcessor(
+            {}, self.tokenizer, transform_args=transform_args
+        )
 
     def chat(
         self,
@@ -112,14 +122,17 @@ class DOLPHIN:
         only_return_img_size=False,
         max_batch_size=16,
     ):
-
         def _preprocess_image(image):
             if isinstance(image, str):
                 image = Image.open(image).convert("RGB")
             if return_img_size or only_return_img_size:
-                image_tensor, ori_size = self.processor.process_image_for_inference(image, return_img_size=True)
+                image_tensor, ori_size = self.processor.process_image_for_inference(
+                    image, return_img_size=True
+                )
             else:
-                image_tensor = self.processor.process_image_for_inference(image, return_img_size=False)
+                image_tensor = self.processor.process_image_for_inference(
+                    image, return_img_size=False
+                )
                 ori_size = None
             return image_tensor, ori_size
 
@@ -140,7 +153,12 @@ class DOLPHIN:
             return question
 
         def _postprocess(output, question):
-            output = output.replace("<s>", "").replace(question, "").replace("</s>", "").replace("<pad>", "")
+            output = (
+                output.replace("<s>", "")
+                .replace(question, "")
+                .replace("</s>", "")
+                .replace("<pad>", "")
+            )
             if self.model_args.get("extra_answer_tokens", False):
                 output = output.split(self.tokenizer._prompt_end_token)[-1]
             return output
@@ -168,17 +186,24 @@ class DOLPHIN:
         for i in range(0, image_tensor.shape[0], max_batch_size):
             image_tensor_batch = image_tensor[i : i + max_batch_size]
             prompt_ids_batch = prompt_ids[i : i + max_batch_size]
-            model_output = self.model.inference(image_tensors=image_tensor_batch, prompt_ids=prompt_ids_batch)
+            model_output = self.model.inference(
+                image_tensors=image_tensor_batch, prompt_ids=prompt_ids_batch
+            )
             model_output_batch.append(model_output)
         model_output = {}
         for k, v in model_output_batch[0].items():
             if isinstance(v, torch.Tensor):
                 model_output[k] = sum(
-                    [v_batch[k].cpu().numpy().tolist() for v_batch in model_output_batch],
+                    [
+                        v_batch[k].cpu().numpy().tolist()
+                        for v_batch in model_output_batch
+                    ],
                     [],
                 )
             else:
-                model_output[k] = sum([v_batch[k] for v_batch in model_output_batch], [])
+                model_output[k] = sum(
+                    [v_batch[k] for v_batch in model_output_batch], []
+                )
 
         if return_raw:
             if return_img_size:
@@ -186,7 +211,10 @@ class DOLPHIN:
             return model_output
         else:
             if isinstance(question, list):
-                output = [_postprocess(model_output["repetitions"][i], question[i]) for i in range(len(question))]
+                output = [
+                    _postprocess(model_output["repetitions"][i], question[i])
+                    for i in range(len(question))
+                ]
                 score = model_output["scores"]
             else:
                 output = _postprocess(model_output["repetitions"][0], question)

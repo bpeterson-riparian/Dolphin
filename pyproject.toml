@@ -1,3 +1,33 @@
+[project]
+name = "dolphin"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Your Name",email = "you@example.com"}
+]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pymupdf (==1.26)",
+    "numpy (==1.26.4)",
+    "omegaconf (==2.3.0)",
+    "opencv-python (==4.11.0.86)",
+    "opencv-python-headless (==4.5.5.64)",
+    "torch (==2.3)",
+    "torchvision (==0.18)",
+    "transformers (==4.47.0)",
+    "accelerate (==1.6.0)",
+    "timm (==0.5.4)"
+]
+
+[project.scripts]
+dolphin = "dolphin.cli:main"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+
 [tool.black]
 line-length = 120
 include = '\.pyi?$'

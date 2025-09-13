@@ -16,7 +16,7 @@ import numpy as np
 import pymupdf
 from PIL import Image
 
-from utils.markdown_utils import MarkdownConverter
+from dolphin.markdown_utils import MarkdownConverter
 
 
 def save_figure_to_local(pil_crop, save_dir, image_name, reading_order):
@@ -111,7 +111,11 @@ def save_combined_pdf_results(all_page_results, pdf_path, save_dir):
     base_name = os.path.splitext(os.path.basename(pdf_path))[0]
 
     # Prepare combined results
-    combined_results = {"source_file": pdf_path, "total_pages": len(all_page_results), "pages": all_page_results}
+    combined_results = {
+        "source_file": pdf_path,
+        "total_pages": len(all_page_results),
+        "pages": all_page_results,
+    }
 
     # Save combined JSON results
     json_filename = f"{base_name}.json"
@@ -133,7 +137,11 @@ def save_combined_pdf_results(all_page_results, pdf_path, save_dir):
                 # Add page separator if not the first page
                 if all_elements:
                     all_elements.append(
-                        {"label": "page_separator", "text": f"\n\n---\n\n", "reading_order": len(all_elements)}
+                        {
+                            "label": "page_separator",
+                            "text": "\n\n---\n\n",
+                            "reading_order": len(all_elements),
+                        }
                     )
                 all_elements.extend(page_elements)
 
@@ -189,7 +197,9 @@ def adjust_box_edges(image, boxes: List[List[float]], max_pixels=15, threshold=0
         def check_edge(img, current_box, i, is_vertical):
             edge = current_box[i]
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-            _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+            _, binary = cv2.threshold(
+                gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU
+            )
 
             if is_vertical:
                 line = binary[current_box[1] : current_box[3] + 1, edge]
@@ -256,7 +266,9 @@ class ImageDimensions:
     padded_h: int
 
 
-def map_to_original_coordinates(x1, y1, x2, y2, dims: ImageDimensions) -> Tuple[int, int, int, int]:
+def map_to_original_coordinates(
+    x1, y1, x2, y2, dims: ImageDimensions
+) -> Tuple[int, int, int, int]:
     """Map coordinates from padded image back to original image
 
     Args:
@@ -368,13 +380,20 @@ def process_coordinates(coords, padded_image, dims: ImageDimensions, previous_bo
         new_previous_box = [x1, y1, x2, y2]
 
         # Map to original coordinates
-        orig_x1, orig_y1, orig_x2, orig_y2 = map_to_original_coordinates(x1, y1, x2, y2, dims)
+        orig_x1, orig_y1, orig_x2, orig_y2 = map_to_original_coordinates(
+            x1, y1, x2, y2, dims
+        )
 
         return x1, y1, x2, y2, orig_x1, orig_y1, orig_x2, orig_y2, new_previous_box
     except Exception as e:
         print(f"process_coordinates error: {str(e)}")
         # Return safe values
-        orig_x1, orig_y1, orig_x2, orig_y2 = 0, 0, min(100, dims.original_w), min(100, dims.original_h)
+        orig_x1, orig_y1, orig_x2, orig_y2 = (
+            0,
+            0,
+            min(100, dims.original_w),
+            min(100, dims.original_h),
+        )
         return 0, 0, 100, 100, orig_x1, orig_y1, orig_x2, orig_y2, [0, 0, 100, 100]
 
 
@@ -400,11 +419,18 @@ def prepare_image(image) -> Tuple[np.ndarray, ImageDimensions]:
         right = max_size - original_w - left
 
         # Apply padding
-        padded_image = cv2.copyMakeBorder(image, top, bottom, left, right, cv2.BORDER_CONSTANT, value=(0, 0, 0))
+        padded_image = cv2.copyMakeBorder(
+            image, top, bottom, left, right, cv2.BORDER_CONSTANT, value=(0, 0, 0)
+        )
 
         padded_h, padded_w = padded_image.shape[:2]
 
-        dimensions = ImageDimensions(original_w=original_w, original_h=original_h, padded_w=padded_w, padded_h=padded_h)
+        dimensions = ImageDimensions(
+            original_w=original_w,
+            original_h=original_h,
+            padded_w=padded_w,
+            padded_h=padded_h,
+        )
 
         return padded_image, dimensions
     except Exception as e:

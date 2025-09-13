@@ -1,4 +1,4 @@
-""" 
+"""
 Copyright (c) 2025 Bytedance Ltd. and/or its affiliates
 SPDX-License-Identifier: MIT
 """
@@ -10,8 +10,8 @@ import os
 from omegaconf import OmegaConf
 from PIL import Image
 
-from chat import DOLPHIN
-from utils.utils import *
+from dolphin.chat import DOLPHIN
+from dolphin.utils import *
 
 
 def process_element(image_path, model, element_type, save_dir=None):
@@ -61,9 +61,18 @@ def process_element(image_path, model, element_type, save_dir=None):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Element-level processing using DOLPHIN model")
-    parser.add_argument("--config", default="./config/Dolphin.yaml", help="Path to configuration file")
-    parser.add_argument("--input_path", type=str, required=True, help="Path to input image or directory of images")
+    parser = argparse.ArgumentParser(
+        description="Element-level processing using DOLPHIN model"
+    )
+    parser.add_argument(
+        "--config", default="./config/Dolphin.yaml", help="Path to configuration file"
+    )
+    parser.add_argument(
+        "--input_path",
+        type=str,
+        required=True,
+        help="Path to input image or directory of images",
+    )
     parser.add_argument(
         "--element_type",
         type=str,
@@ -77,7 +86,11 @@ def main():
         default=None,
         help="Directory to save parsing results (default: same as input directory)",
     )
-    parser.add_argument("--print_results", action="store_true", help="Print recognition results to console")
+    parser.add_argument(
+        "--print_results",
+        action="store_true",
+        help="Print recognition results to console",
+    )
     args = parser.parse_args()
 
     # Load Model
@@ -86,7 +99,9 @@ def main():
 
     # Set save directory
     save_dir = args.save_dir or (
-        args.input_path if os.path.isdir(args.input_path) else os.path.dirname(args.input_path)
+        args.input_path
+        if os.path.isdir(args.input_path)
+        else os.path.dirname(args.input_path)
     )
     setup_output_dirs(save_dir)
 
